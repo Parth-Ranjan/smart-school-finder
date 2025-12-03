@@ -44,6 +44,7 @@ import {
   updateFaculty,
   updateAdmissionTimeline,
   updateAcademics
+  , getSchoolByAuthId
 } from "../api/adminService";
 
 
@@ -749,39 +750,22 @@ const RegistrationPage = () => {
           console.warn('⚠️ Core school update failed, proceeding with subresource saves:', err?.response?.data || err?.message || err);
         }
       } else {
-        // Safety check: Before creating a new school, verify one doesn't already exist
-        // This prevents duplicate school entries for the same user
-        // Note: School accounts can't access admin endpoints, so we skip this check for them
+        // Safety check: Verify existing school by authId to avoid duplicates
+        // School accounts skip admin endpoints, so they proceed as-is
         if (currentUser?.userType !== 'school') {
           try {
-            console.log('🔍 Safety check: Verifying no existing school before creating new one...');
-            const statuses = ['accepted', 'pending', 'rejected'];
-            let existingSchool = null;
-            
-            for (const status of statuses) {
-              try {
-                const response = await getSchoolsByStatus(status);
-                const schools = response?.data?.data || response?.data || [];
-                existingSchool = schools.find(s => s.authId === currentUser._id);
-                if (existingSchool) {
-                  console.log('⚠️ Found existing school during safety check:', existingSchool);
-                  break;
-                }
-              } catch (err) {
-                // Continue checking other statuses
-              }
-            }
-            
-            if (existingSchool) {
-              // Update existing school instead of creating new one
-              console.log('✅ Updating existing school instead of creating duplicate');
+            console.log('🔍 Safety check: Checking existing school via authId...');
+            const res = await getSchoolByAuthId(currentUser._id);
+            const existing = res?.data?.data;
+            const existingSchool = Array.isArray(existing) ? existing[0] : existing;
+            if (existingSchool && existingSchool._id) {
+              console.log('✅ Existing school found, updating instead of creating');
               schoolId = existingSchool._id;
               await updateSchoolInfo(schoolId, payload);
               setIsEditMode(true);
               setEditingSchoolId(schoolId);
               setHasExistingSchool(true);
             } else {
-              // Safe to create new school
               console.log('✅ No existing school found, creating new one');
               const schoolResponse = await addSchool(payload);
               schoolId = schoolResponse.data.data._id;
@@ -1386,251 +1370,89 @@ const RegistrationPage = () => {
   }, [currentUser, hasExistingSchool, isLoadingExistingData]);
 
   // Check for existing school data automatically
+
   const checkForExistingSchool = async () => {
     console.log('🔍 Starting checkForExistingSchool...');
-    console.log('👤 Current User Info:', {
-      _id: currentUser?._id,
-      email: currentUser?.email,
-      userType: currentUser?.userType,
-      schoolId: currentUser?.schoolId,
-      authId: currentUser?.authId,
-      isSchoolAccount: currentUser?.userType === 'school'
-    });
     
+    // 1. Security Check
     if (!currentUser?._id) {
       console.log('❌ No current user, treating as new school');
       setHasExistingSchool(false);
       setIsEditMode(false);
       setIsLoadingExistingData(false);
-      // Load draft for new users
       loadDraft();
       return;
     }
     
-    // Check if there's a draft for this existing user (they might be editing)
-    try {
-      const savedDraft = localStorage.getItem("schoolRegDraft");
-      if (savedDraft) {
-        const draft = JSON.parse(savedDraft);
-        // If draft indicates this is an existing school in edit mode, load the draft instead of backend data
-        if (draft.hasExistingSchool && draft.isEditMode && draft.editingSchoolId) {
-          console.log('✅ Found existing draft for editing school, loading draft instead of backend');
-          loadDraft(); // Load the draft
-          setIsLoadingExistingData(false);
-          toast.success('Resumed editing your school profile from draft');
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('Error checking draft:', error);
-    }
-    
     try {
       setIsLoadingExistingData(true);
-      let school;
+      let school = null;
       
-      // Method 1: Try localStorage (works if same session)
+      // 2. Try LocalStorage (Fastest check)
       const cachedSchoolId = typeof localStorage !== 'undefined' && localStorage.getItem('lastCreatedSchoolId');
       if (cachedSchoolId) {
         try {
-          console.log('🔍 Trying localStorage schoolId:', cachedSchoolId);
           const res = await getSchoolById(cachedSchoolId, { headers: { 'X-Silent-Request': '1' } });
-          school = res?.data?.data || res?.data;
-          if (school && school._id) {
-            console.log('✅ Found existing school from localStorage:', school.name);
-          } else {
-            console.log('⚠️ localStorage returned invalid school data');
-            school = null;
+          const found = res?.data?.data || res?.data;
+          // Verify ownership
+          if (found && found.authId === currentUser._id) {
+             school = found;
+             console.log('✅ Found existing school from localStorage');
           }
         } catch (e) {
-          console.log('❌ localStorage schoolId not valid:', e.message);
+          localStorage.removeItem('lastCreatedSchoolId');
         }
       }
       
-      // Method 2: Try currentUser.schoolId (works if backend returns it)
-      if (!school && currentUser?.schoolId) {
-        try {
-          console.log('🔍 Trying currentUser.schoolId:', currentUser.schoolId);
-          const res = await getSchoolById(currentUser.schoolId, { headers: { 'X-Silent-Request': '1' } });
-          school = res?.data?.data || res?.data;
-          if (school && school._id) {
-            console.log('✅ Found existing school from currentUser.schoolId:', school.name);
-          } else {
-            console.log('⚠️ currentUser.schoolId returned invalid school data');
-            school = null;
-          }
-        } catch (e) {
-          console.log('❌ currentUser.schoolId not valid:', e.message);
-        }
-      }
-      
-      // Method 3: Fetch schools and filter by authId (frontend-only solution)
+      // 3. Try Direct Database Lookup via Auth ID (The Fix for Logout/Login)
       if (!school) {
         try {
-          console.log('🔍 Fetching schools to find match by authId or email...');
-          console.log('🔍 User type:', currentUser?.userType);
+          console.log('🔍 Fetching directly via Auth ID:', currentUser._id);
+          // This calls the API: GET /schools/auth/:authId
+          const res = await getSchoolById(currentUser._id);
           
-          // Special optimization for school accounts
-          if (currentUser?.userType === 'school' && currentUser?.schoolId) {
-            console.log('✅ User is a school account with schoolId already set:', currentUser.schoolId);
-            // Try to fetch the school directly
-            try {
-              const res = await getSchoolById(currentUser.schoolId);
-              school = res?.data?.data || res?.data;
-              if (school && school._id) {
-                console.log('✅ Successfully fetched school from user.schoolId');
-                localStorage.setItem('lastCreatedSchoolId', school._id);
-              }
-            } catch (e) {
-              console.log('❌ Could not fetch school with user.schoolId:', e.message);
-            }
+          const foundData = res?.data?.data || res?.data;
+          
+          // Handle if backend returns an Array [school] or Object {school}
+          if (Array.isArray(foundData) && foundData.length > 0) {
+            school = foundData[0];
+          } else if (foundData && foundData._id) {
+             school = foundData;
           }
-          
-          // If still no school, try fetching all schools (only works for admin users)
-          if (!school && currentUser?.userType === 'school') {
-            // For school accounts, we can't fetch all schools (no permission)
-            // Instead, we'll rely on localStorage or the school having their ID saved
-            console.log('⚠️ School account detected - cannot fetch all schools (no admin permissions)');
-            console.log('💡 Tip: School profile will be linked after first registration');
-            
-            // Check if there's a previously saved school ID in localStorage from a previous session
-            const savedSchoolId = localStorage.getItem('lastCreatedSchoolId');
-            if (savedSchoolId) {
-              try {
-                console.log('🔍 Trying saved schoolId from previous session:', savedSchoolId);
-                const res = await getSchoolById(savedSchoolId);
-                const testSchool = res?.data?.data || res?.data;
-                
-                // Verify this school belongs to the current user by email
-                if (testSchool && testSchool.email && currentUser.email) {
-                  if (testSchool.email.toLowerCase() === currentUser.email.toLowerCase()) {
-                    school = testSchool;
-                    console.log('✅ Found school from saved ID with matching email');
-                  } else {
-                    console.log('❌ Saved school ID belongs to different email, clearing...');
-                    localStorage.removeItem('lastCreatedSchoolId');
-                  }
-                }
-              } catch (e) {
-                console.log('❌ Could not fetch school with saved ID:', e.message);
-                localStorage.removeItem('lastCreatedSchoolId');
-              }
-            }
-          } else if (!school) {
-            // For non-school users or when we need to fetch all schools
-            // Try multiple status endpoints since 'all' doesn't work
-            let schools = [];
-            const statuses = ['accepted', 'pending', 'rejected'];
-            
-            for (const status of statuses) {
-              try {
-                console.log(`🔍 Fetching ${status} schools...`);
-                const res = await getSchoolsByStatus(status);
-                const statusSchools = res?.data?.data || res?.data || [];
-                console.log(`   Found ${statusSchools.length} ${status} schools`);
-                schools = schools.concat(statusSchools);
-              } catch (statusErr) {
-                console.log(`   ❌ Could not fetch ${status} schools:`, statusErr.message);
-              }
-            }
-            
-            console.log(`📊 Found ${schools.length} total schools across all statuses`);
-            
-            // Find school where authId matches current user's _id
-            school = schools.find(s => s.authId === currentUser._id);
-            
-            if (school) {
-              console.log('✅ Found existing school by authId match');
-              localStorage.setItem('lastCreatedSchoolId', school._id);
-            } else {
-            console.log('⚠️ No school found with authId, trying email match...');
-            console.log('🔍 Current user info:', {
-              userId: currentUser._id,
-              userEmail: currentUser.email,
-              userType: currentUser.userType
-            });
-            
-            // Fallback: Try to match by email (for schools created before authId was added)
-            if (currentUser.email) {
-              console.log('🔍 Searching for email match among', schools.length, 'schools');
-              console.log('🔍 Sample schools:', schools.slice(0, 3).map(s => ({ 
-                name: s.name, 
-                email: s.email, 
-                authId: s.authId,
-                _id: s._id
-              })));
-              
-              const userEmailLower = currentUser.email.toLowerCase().trim();
-              school = schools.find(s => {
-                if (!s.email) return false;
-                const schoolEmailLower = s.email.toLowerCase().trim();
-                const matches = schoolEmailLower === userEmailLower;
-                if (matches) {
-                  console.log('🎯 Email match found:', {
-                    schoolName: s.name,
-                    schoolEmail: s.email,
-                    userEmail: currentUser.email
-                  });
-                }
-                return matches;
-              });
-              
-              if (school) {
-                console.log('✅ Found existing school by email match:', {
-                  schoolName: school.name,
-                  schoolEmail: school.email,
-                  schoolId: school._id,
-                  hasAuthId: !!school.authId
-                });
-                localStorage.setItem('lastCreatedSchoolId', school._id);
-              } else {
-                console.log('❌ No school found with matching email');
-                console.log('🔍 Your email:', userEmailLower);
-                console.log('🔍 All school emails:', schools.map(s => s.email?.toLowerCase()).filter(Boolean));
-              }
-            } else {
-              console.log('❌ Current user has no email to match against');
-            }
-            }
+
+          if (school) {
+             console.log('✅ Found school via Database Lookup');
+             localStorage.setItem('lastCreatedSchoolId', school._id);
           }
         } catch (e) {
-          console.log('❌ Could not fetch schools:', e.message);
+          console.log('❌ No school found for this user in DB.');
         }
       }
       
+      // 4. Final Decision: Load Data or Start Fresh
       if (school && school._id) {
-        console.log('✅ Found existing school, entering edit mode:', {
-          schoolId: school._id,
-          schoolName: school.name,
-          schoolEmail: school.email
-        });
+        console.log('🎉 School found! Loading data...');
         setHasExistingSchool(true);
         setEditingSchoolId(school._id);
         setIsEditMode(true);
-        console.log('🔄 Loading existing school data...');
-        await loadExistingSchoolData(school);
-        console.log('✅ School data loaded successfully');
-        toast.success(`Welcome back! Loaded profile for ${school.name || 'your school'}`);
+        await loadExistingSchoolData(school); // <--- This fills your form fields
       } else {
-        console.log('❌ No existing school found, treating as new registration');
+        console.log('❌ No existing school found. Starting fresh.');
         setHasExistingSchool(false);
         setIsEditMode(false);
-        // Auto-fill user details for new schools
-        if (currentUser) {
-          setFormData(prev => ({
-            ...prev,
-            email: currentUser.email || prev.email
-          }));
-        }
-        // Only load draft if no existing school found
+        
+        // Auto-fill email for new users
+        setFormData(prev => ({
+          ...prev,
+          email: currentUser.email || prev.email
+        }));
+        
+        // Only load draft if no real school exists
         loadDraft();
       }
     } catch (error) {
-      console.error('Error checking for existing school:', error);
+      console.error('Error in check process:', error);
       setHasExistingSchool(false);
-      setIsEditMode(false);
-      // Load draft on error as well (assuming new school)
-      loadDraft();
     } finally {
       setIsLoadingExistingData(false);
     }

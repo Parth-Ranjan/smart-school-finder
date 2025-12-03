@@ -1,4 +1,3 @@
-// src/api/adminService.js
 import apiClient from './axios';
 
 /**
@@ -20,7 +19,7 @@ export const loginAdmin = async (credentials) => {
 };
 
 /**
- * ============================l-f
+ * ============================
  * Dashboard & User Management
  * ============================
  */
@@ -92,7 +91,19 @@ export const updateExistingApplication = (studId, updateData) => {
  * ============================
  */
 
-export const addSchool = (data) => apiClient.post('/admin/schools/', data);
+// ✅ FIXED: Updated to match router.post('/schools/by-auth/:authId')
+export const addSchool = (data) => {
+  const { authId, ...bodyData } = data;
+  
+  if (!authId) {
+    console.error("❌ addSchool called without authId in payload", data);
+    throw new Error("authId is required to create a school");
+  }
+
+  // Matches your backend route: router.post('/schools/by-auth/:authId', addSchoolByAuth);
+  return apiClient.post(`/admin/schools/auth/${authId}`, bodyData);
+};
+
 export const addAmenities = (data) => apiClient.post('/admin/schools/amenities/', data);
 export const addActivities = (data) => apiClient.post('/admin/schools/activities/', data);
 export const addAlumni = (data) => apiClient.post('/admin/alumnus', data);
@@ -119,10 +130,10 @@ export const addInternationalExposure = (data) =>
  */
 
 export const getSchoolById = (schoolId, config) =>
-  apiClient.get(`/admin/schools/${encodeURIComponent(schoolId)}`, config);
+  apiClient.get(`/admin/schools/auth/${encodeURIComponent(schoolId)}`, config);
 
 export const updateSchoolInfo = (schoolId, data) =>
-  apiClient.put(`/admin/schools/${encodeURIComponent(schoolId)}`, data);
+  apiClient.put(`/admin/schools/auth/${encodeURIComponent(schoolId)}`, data);
 
 export const updateSchoolStatus = (schoolId, newStatus) =>
   apiClient.put(`/admin/schools/${encodeURIComponent(schoolId)}`, { status: newStatus });
@@ -269,6 +280,7 @@ export const getSchoolByAuthId = async (authId) => {
   if (!authId) return { data: null };
   try {
     console.log(`🔍 Finding school by authId: ${authId}`);
+    // ✅ FIXED: Matches router.get('/schools/by-auth/:authId')
     const res = await apiClient.get(`/admin/schools/by-auth/${encodeURIComponent(authId)}`, {
       headers: { 'X-Silent-Request': '1' }
     });
