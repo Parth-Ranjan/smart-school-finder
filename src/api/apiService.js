@@ -30,9 +30,9 @@ let studentApplicationsData = [
 // In apiService.js
 
 // Fetch PDF data (the actual student application file)
-export const fetchStudentPDF = async (studId) => {
+export const fetchStudentPDF = async (studId,applicationId) => {
   try {
-    const res = await apiClient.get(`/api/users/pdf/view/${studId}`, {
+    const res = await apiClient.get(`/api/users/pdf/view/${studId}/${applicationId}`, {
       responseType: 'arraybuffer', // Get binary PDF data
       headers: { 'X-Silent-Request': '1' }
     });
@@ -102,12 +102,17 @@ export const fetchStudentApplications = async (schoolId) => {
         }
 
         console.log(`🔍 Form ${idx} - studId extracted:`, studId, 'from form:', form);
+        const applicationId =
+  typeof form?.applicationData?.applicationId === 'string'
+    ? form.applicationData.applicationId
+    : form?.applicationData?.applicationId?._id || null;
+
 
         // Try to fetch PDF data, but don't let it break the entire process
         let pdfData = null;
-        if (studId) {
+        if (studId && applicationId) {
             try {
-                pdfData = await fetchStudentPDF(studId);
+                pdfData = await fetchStudentPDF(studId,applicationId);
             } catch (pdfError) {
                 console.warn(`⚠️ Could not fetch PDF for student ${studId}:`, pdfError.message);
                 pdfData = null;
@@ -214,17 +219,17 @@ export const viewPDFInNewTab = (studId) => {
   // Use the correct backend URL based on environment
   const apiBaseURL = import.meta.env.DEV ? '' : import.meta.env.VITE_API_BASE_URL || 'https://backend-tc-sa-v2.onrender.com';
   const pdfUrl = import.meta.env.DEV
-    ? `/api/users/pdf/view/${studId}`
-    : `${apiBaseURL}/users/pdf/view/${studId}`;
+    ? `/api/users/pdf/view/${studId}/${applicationId}`
+    : `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
 
   console.log('🔗 Opening PDF at:', pdfUrl);
   window.open(pdfUrl, '_blank');
 };
 
 // Download PDF
-export const downloadPDF = async (studId, studentName) => {
+export const downloadPDF = async (studId, applicationId,studentName) => {
   try {
-    const pdfData = await fetchStudentPDF(studId);
+    const pdfData = await fetchStudentPDF(studId,applicationId);
     if (!pdfData?.blob) {
       console.error('Failed to download PDF');
       return;

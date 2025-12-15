@@ -611,15 +611,42 @@ const ViewStudentApplications = ({ }) => {
     } else if (app?._id) {
       // Case 5: fallback to application _id
       studId = app._id;
-    }
+    }let applicationId = null;
 
-    if (studId) {
+// ✅ PRIORITY 1: correct application id from backend
+if (typeof app?._raw?.applicationId?._id === 'string') {
+  applicationId = app._raw.applicationId._id;
+}
+// Case 2: normalized app (if you already override _id)
+else if (typeof app?._id === 'string') {
+  applicationId = app._id;
+}
+// Case 3: applicationId as string
+else if (typeof app?.applicationId === 'string') {
+  applicationId = app.applicationId;
+}
+// Case 4: applicationId populated object
+else if (typeof app?.applicationId === 'object' && app?.applicationId?._id) {
+  applicationId = app.applicationId._id;
+}
+// Case 5: formId fallback
+else if (typeof app?.formId === 'string') {
+  applicationId = app.formId;
+}
+// Case 6: formId populated
+else if (typeof app?.formId === 'object' && app?.formId?._id) {
+  applicationId = app.formId._id;
+}
+
+
+
+    if (studId && applicationId) {
       console.log('🔗 Opening PDF for student:', studId, 'Type:', typeof studId);
       // Construct URL properly for both dev and production
       const apiBaseURL = import.meta.env.DEV ? '' : import.meta.env.VITE_API_BASE_URL || 'https://backend-tc-sa-v2.onrender.com/api';
       const pdfUrl = import.meta.env.DEV
-        ? `/api/users/pdf/view/${studId}`
-        : `${apiBaseURL}/users/pdf/view/${studId}`;
+        ? `/api/users/pdf/view/${studId}/${applicationId}`
+        : `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
       console.log('📄 PDF URL:', pdfUrl);
       window.open(pdfUrl, '_blank');
     } else {

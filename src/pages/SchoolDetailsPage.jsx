@@ -1717,82 +1717,7 @@ const SchoolDetailsPage = ({ shortlist, onShortlistToggle }) => {
           </div>
         )}
 
-        {/* Admission Process Timeline Section */}
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <div className="flex items-center mb-6">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-              <Award size={16} className="text-blue-600" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">Admission Process</h2>
-              <p className="text-sm text-gray-600">Admission Timeline 2024-25</p>
-            </div>
-          </div>
-          
-          {admissionTimeline && admissionTimeline.timelines && admissionTimeline.timelines.length > 0 ? (
-            <div className="space-y-4">
-              {admissionTimeline.timelines.map((timeline, index) => {
-                const getStatusInfo = (status) => {
-                  switch (status) {
-                    case 'Ongoing':
-                      return { color: 'bg-green-100 text-green-800', text: 'Open', icon: '✓' };
-                    case 'Ended':
-                      return { color: 'bg-red-100 text-red-800', text: 'Closed', icon: '✗' };
-                    default:
-                      return { color: 'bg-yellow-100 text-yellow-800', text: 'Pending', icon: '⏰' };
-                  }
-                };
-                
-                const statusInfo = getStatusInfo(timeline.status);
-                
-                return (
-                  <div key={timeline._id || index} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${
-                          timeline.status === 'Ongoing' ? 'bg-green-100' : 
-                          timeline.status === 'Ended' ? 'bg-red-100' : 'bg-yellow-100'
-                        }`}>
-                          <span className="text-sm font-bold">
-                            {timeline.status === 'Ongoing' ? '✓' : 
-                             timeline.status === 'Ended' ? '✗' : '⏰'}
-                          </span>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-800">
-                            {timeline.eligibility?.admissionLevel || 'Admission Process'}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {timeline.eligibility?.ageCriteria || 'Application Period: ' + 
-                             new Date(timeline.admissionStartDate).toLocaleDateString() + ' - ' + 
-                             new Date(timeline.admissionEndDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
-                          {statusInfo.text}
-                        </span>
-                        {timeline.status === 'Ongoing' && (
-                          <button 
-                            onClick={() => handleApplyNow()}
-                            className="bg-black text-white px-4 py-1 rounded text-xs font-medium hover:bg-gray-800 transition-colors"
-                          >
-                            Apply Now
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-gray-500 text-center py-8">
-              <p>No admission timeline information available.</p>
-            </div>
-          )}
-        </div>
+       
 
         {/* Fees & Scholarships Section */}
         {feesAndScholarships && (
@@ -1957,105 +1882,119 @@ const SchoolDetailsPage = ({ shortlist, onShortlistToggle }) => {
         {/* Reviews Section */}
         <ReviewSection_fixed schoolId={school._id} />
 
-        {/* Required Documents Section */}
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <div className="flex items-center mb-6">
-            <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
-              <Award size={16} className="text-indigo-600" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">Required Documents</h2>
-              <p className="text-sm text-gray-600">Documents needed for admission process</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
             
-            {/* General Documents */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-              <div className="flex items-center mb-3">
-                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                  <CheckCircle size={12} className="text-blue-600" />
-                </div>
-                <h3 className="font-semibold text-gray-800">General Documents</h3>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Birth Certificate</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Previous School Marksheet</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Aadhar Card</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Passport Size Photos</span>
-                </div>
-              </div>
+           
+
+            
+         
+        {/* Admission Timeline With Documents Section */}
+{/* Admission Timeline With Documents */}
+<div className="bg-white shadow-lg rounded-lg p-6">
+  <div className="flex items-center mb-6">
+    <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+      <Award size={16} className="text-yellow-600" />
+    </div>
+    <div>
+      <h2 className="text-2xl font-bold text-gray-800">Admission Timeline</h2>
+      <p className="text-sm text-gray-600">
+        Admission schedule with required documents
+      </p>
+    </div>
+  </div>
+
+  {admissionTimeline?.timelines?.length > 0 ? (
+    <div className="space-y-6">
+      {admissionTimeline.timelines.map((timeline, index) => {
+        const getStatusStyle = (status) => {
+          switch (status) {
+            case 'Ongoing':
+              return 'bg-green-100 text-green-700 border-green-200';
+            case 'Ended':
+              return 'bg-red-100 text-red-700 border-red-200';
+            default:
+              return 'bg-orange-100 text-orange-700 border-orange-200';
+          }
+        };
+
+        return (
+          <div
+            key={timeline._id || index}
+            className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 shadow-sm"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                {timeline.eligibility?.admissionLevel || 'Admission'}
+              </h3>
+
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusStyle(
+                  timeline.status
+                )}`}
+              >
+                {timeline.status || 'Starting Soon'}
+              </span>
             </div>
 
-            {/* Academic Documents */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-              <div className="flex items-center mb-3">
-                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <CheckCircle size={12} className="text-green-600" />
-                </div>
-                <h3 className="font-semibold text-gray-800">Academic Documents</h3>
+            {/* Dates & Age */}
+            <div className="space-y-2 text-sm text-gray-700 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-600">📅</span>
+                <span className="font-medium">Starts On:</span>
+                <span>
+                  {new Date(timeline.admissionStartDate).toLocaleDateString()}
+                </span>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Transfer Certificate</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Character Certificate</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Medical Certificate</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Bonafide Certificate</span>
-                </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-600">📅</span>
+                <span className="font-medium">Ends On:</span>
+                <span>
+                  {new Date(timeline.admissionEndDate).toLocaleDateString()}
+                </span>
               </div>
+
+              {timeline.eligibility?.ageCriteria && (
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-600">👶</span>
+                  <span className="font-medium">Age:</span>
+                  <span>{timeline.eligibility.ageCriteria}</span>
+                </div>
+              )}
             </div>
 
-            {/* Additional Documents */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-              <div className="flex items-center mb-3">
-                <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center mr-3">
-                  <CheckCircle size={12} className="text-purple-600" />
+            {/* Documents */}
+            {timeline.documentsRequired?.length > 0 && (
+              <>
+                <h4 className="text-sm font-semibold text-gray-800 mb-2">
+                  Documents Required
+                </h4>
+
+                <div className="flex flex-wrap gap-2">
+                  {timeline.documentsRequired.map((doc, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-lg border border-yellow-200"
+                    >
+                      {doc}
+                    </span>
+                  ))}
                 </div>
-                <h3 className="font-semibold text-gray-800">Additional Documents</h3>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Income Certificate (if applicable)</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Caste Certificate (if applicable)</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Sports Achievement Certificate</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-700">Guardian ID Proof</span>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
-        </div>
+        );
+      })}
+    </div>
+  ) : (
+    <p className="text-center text-gray-500 py-8">
+      No admission timeline available
+    </p>
+  )}
+</div>
+
+
       </div>
     </div>
   );

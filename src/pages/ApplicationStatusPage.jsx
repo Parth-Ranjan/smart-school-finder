@@ -14,14 +14,26 @@ const ApplicationStatusPage = () => {
   const [schoolNameById, setSchoolNameById] = useState({});
   const [cachedAppliedSchools, setCachedAppliedSchools] = useState([]);
 
-  const handleViewPdf = async () => {
-    try {
-      // make sure a fresh PDF exists
-      await generateStudentPdf(currentUser._id);
-    } catch (_) {}
-    // Use relative path so dev proxy/axios base routes to the correct backend
-    window.open(`/api/users/pdf/view/${currentUser._id}`, '_blank');
-  };
+  const handleViewPdf = async (studId, applicationId) => {
+  if (!studId || !applicationId) {
+    console.error("Missing studId or applicationId", { studId, applicationId });
+    return;
+  }
+
+  try {
+    // ensure PDF exists
+    await generateStudentPdf(studId, applicationId);
+  } catch (err) {
+    console.warn("PDF generation failed (may already exist)", err);
+  }
+
+  // open PDF
+  window.open(
+    `/api/users/pdf/view/${studId}/${applicationId}`,
+    "_blank"
+  );
+};
+
 
   useEffect(() => {
     const run = async () => {
@@ -247,7 +259,18 @@ const ApplicationStatusPage = () => {
                       <div className="text-xs text-gray-400 mt-1">Submitted: {submitted}</div>
                     </div>
                     <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                      <button onClick={handleViewPdf} className="px-2 py-1 text-sm rounded border border-gray-300 hover:bg-gray-50">View PDF</button>
+                     <button
+  onClick={() =>
+    handleViewPdf(
+      f.studId?._id || f.studId,
+      f.applicationId?._id || f.applicationId
+    )
+  }
+  className="px-2 py-1 text-sm rounded border border-gray-300 hover:bg-gray-50"
+>
+  View PDF
+</button>
+
                       <button onClick={() => navigate('/my-applications')} className="px-2 py-1 text-sm rounded bg-gray-900 text-white hover:bg-gray-800">Open</button>
                     </div>
                   </div>
