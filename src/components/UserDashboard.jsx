@@ -5,6 +5,8 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import SchoolCard from './SchoolCard';
 import UserProfileForm from './UserProfileForm';
+import { fetchPdfBlob } from '../utils/pdfHelper';
+
 import {
   updateUserProfile,
   createStudentProfile,
@@ -501,7 +503,7 @@ const extractStudentId = (app, currentUser) => {
                           )}
                           {/* View PDF */}
                           {(() => {
-  const studId = currentUser._id;
+  const studId = currentUser?._id;
   const applicationId = extractApplicationId(row);
 
   if (!studId || !applicationId) return null;
@@ -515,15 +517,29 @@ const extractStudentId = (app, currentUser) => {
     ? `/api/users/pdf/view/${studId}/${applicationId}`
     : `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
 
+  const handleOpenPdf = async () => {
+    try {
+      const blob = await fetchPdfBlob(pdfUrl);
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // OPEN IN NEW TAB (works everywhere)
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+
+      // optional cleanup
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+    } catch (err) {
+      console.error(err);
+      toast.error('Unable to open PDF');
+    }
+  };
+
   return (
-    <a
-      href={pdfUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      onClick={handleOpenPdf}
       className="inline-flex items-center bg-white text-gray-700 font-semibold px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 mr-2"
     >
       View PDF
-    </a>
+    </button>
   );
 })()}
 
