@@ -299,6 +299,26 @@ useEffect(() => {
               >
                 <option value="CBSE">CBSE</option>
                 <option value="ICSE">ICSE</option>
+                 <option value="CISCE">CISCE</option>
+  <option value="NIOS">NIOS</option>
+  <option value="SSC">SSC</option>
+  <option value="IGCSE">IGCSE</option>
+  <option value="IB">IB</option>
+  <option value="KVS">KVS</option>
+  <option value="JNV">JNV</option>
+  <option value="DBSE">DBSE</option>
+  <option value="MSBSHSE">MSBSHSE</option>
+  <option value="UPMSP">UPMSP</option>
+  <option value="KSEEB">KSEEB</option>
+  <option value="WBBSE">WBBSE</option>
+  <option value="GSEB">GSEB</option>
+  <option value="RBSE">RBSE</option>
+  <option value="BSEB">BSEB</option>
+  <option value="PSEB">PSEB</option>
+  <option value="BSE">BSE</option>
+  <option value="SEBA">SEBA</option>
+  <option value="MPBSE">MPBSE</option>
+  
                 <option value="STATE">STATE</option>
                 <option value="OTHER">OTHER</option>
               </select>

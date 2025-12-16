@@ -41,6 +41,7 @@ const StatusBadge = ({ status }) => {
 };
 
 const ApplicationCard = ({ application, onViewDetails }) => {
+  debugger;
   const formatDate = (dateString) => {
     if (!dateString) return 'Not available';
     
@@ -97,8 +98,11 @@ const ApplicationCard = ({ application, onViewDetails }) => {
       )}
 
       <div className="flex justify-between items-center">
+         
         <button
+       
           onClick={() => onViewDetails(application)}
+          
           className="flex items-center px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
         >
           <Eye className="w-4 h-4 mr-2" />
@@ -226,15 +230,41 @@ const StudentApplicationTrackingPage = () => {
     } else if (application?._id) {
       // Case 5: fallback to application _id
       studId = application._id;
-    }
 
-    if (studId) {
+    }
+    let applicationId = null;
+
+// Case 1: populated applicationId
+if (typeof application?.applicationId === 'object' && application?.applicationId?._id) {
+  applicationId = application.applicationId._id;
+}
+// Case 2: applicationId as string
+else if (typeof application?.applicationId === 'string') {
+  applicationId = application.applicationId;
+}
+// Case 3: formId string
+else if (typeof application?.formId === 'string') {
+  applicationId = application.formId;
+}
+// Case 4: formId populated
+else if (typeof application?.formId === 'object' && application?.formId?._id) {
+  applicationId = application.formId._id;
+}
+// Case 5: fallback to _id
+else if (typeof application?._id === 'string') {
+  applicationId = application._id;
+}
+
+
+
+
+    if (studId && applicationId) {
       console.log('🔗 Opening PDF for student:', studId, 'Type:', typeof studId);
       // Construct URL properly for both dev and production
       const apiBaseURL = import.meta.env.DEV ? '' : import.meta.env.VITE_API_BASE_URL || 'https://backend-tc-sa-v2.onrender.com/api';
       const pdfUrl = import.meta.env.DEV
-        ? `/api/users/pdf/view/${studId}`
-        : `${apiBaseURL}/users/pdf/view/${studId}`;
+        ? `/api/users/pdf/view/${studId}/${applicationId}`
+        : `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
       console.log('📄 PDF URL:', pdfUrl);
       window.open(pdfUrl, '_blank');
     } else {
@@ -368,6 +398,14 @@ const StudentApplicationTrackingPage = () => {
       </div>
     );
   }
+  const filteredApplications =
+  selectedStatus === 'All'
+    ? applications
+    : applications.filter(
+        (app) =>
+          app.status?.toLowerCase() === selectedStatus.toLowerCase()
+      );
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -417,7 +455,7 @@ const StudentApplicationTrackingPage = () => {
         </div>
 
         {/* Applications Grid */}
-        {applications.length === 0 ? (
+       {filteredApplications.length === 0 ? (
           <div className="text-center py-12">
             <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
@@ -437,7 +475,7 @@ const StudentApplicationTrackingPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {applications.map((application, index) => (
+            {filteredApplications.map((application, index) => (
               <ApplicationCard
                 key={application.formId || application._id || application.id || `app-${index}`}
                 application={application}

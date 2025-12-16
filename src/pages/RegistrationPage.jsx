@@ -2347,7 +2347,32 @@ const RegistrationPage = () => {
                 label="Board"
                 name="board"
                 type="select"
-                options={["CBSE", "ICSE", "STATE", "IB", "IGCSE"]}
+               options={[
+  "CBSE",
+  "ICSE",
+  "CISCE",
+  "NIOS",
+  "SSC",
+  "IGCSE",
+  "IB",
+  "KVS",
+  "JNV",
+  "DBSE",
+  "MSBSHSE",
+  "UPMSP",
+  "KSEEB",
+  "WBBSE",
+  "GSEB",
+  "RBSE",
+  "BSEB",
+  "PSEB",
+  "BSE",
+  "SEBA",
+  "MPBSE",
+  "STATE",
+  "OTHER"
+]}
+
                 value={formData.board}
                 onChange={handleInputChange}
                 required

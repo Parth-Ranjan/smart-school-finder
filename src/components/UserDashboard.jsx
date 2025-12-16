@@ -363,6 +363,40 @@ const UserDashboard = ({ shortlist, comparisonList, onCompareToggle, onShortlist
       </div>
     );
   };
+ // ✅ Extract ONLY the REAL applicationId (not formId / wrapper id)
+const extractApplicationId = (app) => {
+  let applicationId = null;
+
+  // ⭐ CASE 1 (MOST IMPORTANT): applicationData.applicationId._id
+  if (typeof app?.applicationData?.applicationId?._id === 'string') {
+    applicationId = app.applicationData.applicationId._id;
+  }
+  // Case 2: deeply nested raw object (backup)
+  else if (typeof app?._raw?.applicationId?._id === 'string') {
+    applicationId = app._raw.applicationId._id;
+  }
+  // Case 3: applicationId populated object
+  else if (typeof app?.applicationId === 'object' && app?.applicationId?._id) {
+    applicationId = app.applicationId._id;
+  }
+  // Case 4: applicationId as string
+  else if (typeof app?.applicationId === 'string') {
+    applicationId = app.applicationId;
+  }
+
+  return applicationId;
+};
+
+const extractStudentId = (app, currentUser) => {
+  return (
+    app?.applicationData?.studId?._id ||
+    app?.studId?._id ||
+    app?.studId ||
+    currentUser?.studentId ||
+    currentUser?._id ||
+    null
+  );
+};
 
   // Main render
   return (
@@ -466,25 +500,71 @@ const UserDashboard = ({ shortlist, comparisonList, onCompareToggle, onShortlist
                             </button>
                           )}
                           {/* View PDF */}
-                          <a
-                            href={`/api/users/pdf/view/${currentUser._id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center bg-white text-gray-700 font-semibold px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 mr-2"
-                          >
-                            {/* Eye icon replacement with simple text to avoid extra imports */}
-                            View PDF
-                          </a>
+                          {(() => {
+  const studId = currentUser._id;
+  const applicationId = extractApplicationId(row);
+
+  if (!studId || !applicationId) return null;
+
+  const apiBaseURL = import.meta.env.DEV
+    ? ''
+    : import.meta.env.VITE_API_BASE_URL ||
+      'https://backend-tc-sa-v2.onrender.com/api';
+
+  const pdfUrl = import.meta.env.DEV
+    ? `/api/users/pdf/view/${studId}/${applicationId}`
+    : `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
+
+  return (
+    <a
+      href={pdfUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center bg-white text-gray-700 font-semibold px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 mr-2"
+    >
+      View PDF
+    </a>
+  );
+})()}
+
 
                           {/* Download PDF */}
-                          <a
-                            href={`/api/users/pdf/download/${currentUser._id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center bg-green-600 text-white font-semibold px-3 py-1.5 rounded-md hover:bg-green-700"
-                          >
-                            <Download size={16} className="mr-1.5" /> Download PDF
-                          </a>
+                          {(() => {
+  const studentId = extractStudentId(row, currentUser);
+  const applicationId = extractApplicationId(row);
+
+  if (!studentId || !applicationId) {
+    console.warn('❌ Missing IDs for PDF download', {
+      studentId,
+      applicationId,
+      row
+    });
+    return null;
+  }
+
+  const apiBaseURL = import.meta.env.DEV
+    ? ''
+    : import.meta.env.VITE_API_BASE_URL || 'https://backend-tc-sa-v2.onrender.com/api';
+
+  const downloadUrl = import.meta.env.DEV
+    ? `/api/users/pdf/download/${studentId}/${applicationId}`
+    : `${apiBaseURL}/users/pdf/download/${studentId}/${applicationId}`;
+
+  console.log('⬇️ Download PDF:', downloadUrl);
+
+  return (
+    <a
+      href={downloadUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center bg-green-600 text-white font-semibold px-3 py-1.5 rounded-md hover:bg-green-700"
+    >
+      <Download size={16} className="mr-1.5" />
+      Download PDF
+    </a>
+  );
+})()}
+
                         </td>
                       </tr>
                     );
