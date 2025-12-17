@@ -508,10 +508,8 @@ const extractStudentId = (app, currentUser) => {
 
   if (!studId || !applicationId) return null;
 
-  const apiBaseURL = import.meta.env.DEV
-    ? ''
-    : import.meta.env.VITE_API_BASE_URL ||
-      'https://backend-tc-sa-v2.onrender.com/api';
+ const apiBaseURL = import.meta.env.VITE_API_BASE_URL;
+    
 
   const pdfUrl = import.meta.env.DEV
     ? `/api/users/pdf/view/${studId}/${applicationId}`
