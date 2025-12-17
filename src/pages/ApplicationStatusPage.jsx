@@ -21,17 +21,14 @@ const ApplicationStatusPage = () => {
     await generateStudentPdf(studId, applicationId);
   } catch {}
 
-  const apiBaseURL =
-    import.meta.env.VITE_API_BASE_URL?.startsWith("http")
-      ? import.meta.env.VITE_API_BASE_URL
-      : "https://backend-tc-sa-v2.onrender.com/api";
+  // 🔥 FORCE absolute URL
+  const pdfUrl = `https://backend-tc-sa-v2.onrender.com/api/users/pdf/view/${studId}/${applicationId}`;
 
-  const pdfUrl = `${apiBaseURL}/users/pdf/view/${studId}/${applicationId}`;
-
-  console.log("OPENING PDF:", pdfUrl);
+  console.log("OPENING (FORCED):", pdfUrl);
 
   window.open(pdfUrl, "_blank", "noopener,noreferrer");
 };
+
 
 
 
