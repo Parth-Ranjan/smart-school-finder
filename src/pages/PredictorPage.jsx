@@ -118,57 +118,67 @@ const PredictorPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleGoogleLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by this browser.');
-      return;
-    }
+ const handleGoogleLocation = () => {
+  if (!navigator.geolocation) {
+    toast.error('Geolocation is not supported by this browser.');
+    return;
+  }
 
-    setIsLoading(true);
-    
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          
-          // Use reverse geocoding to get address
-          const response = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-          );
-          
-          const data = await response.json();
-          
-          if (data.countryName === 'India') {
-            setFormData(prev => ({
-              ...prev,
-              state: data.principalSubdivision || '',
-              city: data.city || data.locality || '',
-              area: data.localityInfo?.administrative?.[2]?.name || ''
-            }));
-            
-            toast.success('Location fetched successfully!');
-          } else {
-            toast.error('Location service is only available in India.');
-          }
-        } catch (error) {
-          console.error('Error fetching location:', error);
-          toast.error('Failed to fetch location. Please try again.');
-        } finally {
+  setIsLoading(true);
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+
+        const response = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        );
+
+        const data = await response.json();
+
+        if (data.countryName !== 'India') {
+          toast.error('Location service is only available in India.');
           setIsLoading(false);
+          return;
         }
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        toast.error('Unable to access your location. Please enable location services.');
+
+        setFormData((prev) => ({
+          ...prev,
+          latitude: latitude.toFixed(6),
+          longitude: longitude.toFixed(6),
+          state: data.principalSubdivision || '',
+          city: data.city || data.locality || data.localityInfo?.administrative?.[3]?.name || '',
+          area: data.locality || '',
+          pincode: data.postcode || ''
+        }));
+
+        toast.success('Location fetched successfully!');
+      } catch (error) {
+        console.error('Error fetching location:', error);
+        toast.error('Failed to fetch location. Please try again.');
+      } finally {
         setIsLoading(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000
       }
-    );
-  };
+    },
+    (error) => {
+      console.error('Geolocation error:', error);
+
+      if (error.code === 1) toast.error('Permission denied for location.');
+      else if (error.code === 2) toast.error('Position unavailable.');
+      else if (error.code === 3) toast.error('Location request timed out.');
+      else toast.error('Unable to access your location.');
+
+      setIsLoading(false);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 300000
+    }
+  );
+};
+
 
   const handleGetSchools = async (e) => {
     // Prevent any default form behavior

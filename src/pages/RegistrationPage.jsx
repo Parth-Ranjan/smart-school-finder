@@ -503,36 +503,79 @@ const RegistrationPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser.");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
+const handleUseCurrentLocation = () => {
+  if (!navigator.geolocation) {
+    toast.error("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      try {
         const { latitude, longitude } = pos.coords;
+
+        // 1️⃣ BigDataCloud (city/state)
+        const res1 = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        );
+        const data1 = await res1.json();
+
+        let city = data1.city || data1.locality || '';
+        let state = data1.principalSubdivision || '';
+        let pincode = '';
+
+        // 2️⃣ OpenStreetMap (CORRECT WAY)
+        const res2 = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'https://smart-school-finder-beta.vercel.app/' // REQUIRED
+            }
+          }
+        );
+
+        const data2 = await res2.json();
+
+        // 🔥 STRONG PINCODE EXTRACTION
+        if (data2?.address) {
+          pincode =
+            data2.address.postcode ||
+            data2.address.postal_code ||
+            data2.address.zip ||
+            '';
+        }
+
         setFormData((prev) => ({
           ...prev,
-          latitude: String(latitude.toFixed(6)),
-          longitude: String(longitude.toFixed(6)),
+          latitude: latitude.toFixed(6),
+          longitude: longitude.toFixed(6),
+          city,
+          state,
+          pincode
         }));
-        toast.success("Location captured from GPS.");
-      },
-      (err) => {
-        const code = err?.code;
-        if (code === 1) {
-          toast.error("Permission denied for location. Please allow access.");
-        } else if (code === 2) {
-          toast.error("Position unavailable. Try again.");
-        } else if (code === 3) {
-          toast.error("Location request timed out. Try again.");
+
+        if (!pincode) {
+          toast.warning("Pincode not found . Please enter manually.");
         } else {
-          toast.error("Could not get current location.");
+          toast.success("Location fetched successfully.");
         }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  };
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to fetch location details.");
+      }
+    },
+    (err) => {
+      if (err.code === 1) toast.error("Permission denied for location.");
+      else if (err.code === 2) toast.error("Position unavailable.");
+      else if (err.code === 3) toast.error("Location request timed out.");
+      else toast.error("Could not get current location.");
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+};
+
+
 
   const handleCheckboxChange = (e) => {
     const { name, value, checked } = e.target;
