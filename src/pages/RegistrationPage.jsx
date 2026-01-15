@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
@@ -356,6 +356,8 @@ const RegistrationPage = () => {
   const [hasExistingSchool, setHasExistingSchool] = useState(false);
   const [isLoadingExistingData, setIsLoadingExistingData] = useState(true);
   const hasCheckedForSchool = React.useRef(false); // Prevent multiple checks
+  const photoInputRef = useRef(null);
+const videoInputRef = useRef(null);
 
   // State with all the fields required by the backend schema
   const [formData, setFormData] = useState({
@@ -3868,9 +3870,18 @@ const handleUseCurrentLocation = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                         >
                           <option value="">Select Level</option>
-                          <option value="KGs">KGs</option>
-                          <option value="Grade 1 - 5">Grade 1 - 5</option>
-                          <option value="Grade 6-10">Grade 6-10</option>
+                            <option value="KG">KG</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+    <option value="7">7</option>
+    <option value="8">8</option>
+    <option value="9">9</option>
+    <option value="10">10</option>
+    <option value="11">11</option>
                         </select>
                       </div>
                       <div>
@@ -4007,34 +4018,86 @@ const handleUseCurrentLocation = () => {
             </div>
 
             <div className="block" id="media">
-              <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl border border-violet-200/50 shadow-lg">
-                <div className="p-3 bg-gradient-to-r from-violet-500 to-purple-500 rounded-xl shadow-lg">
-                  <Image className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                    📸 Media
-                  </h2>
-                  <p className="text-gray-600 mt-1">Photos and videos showcasing your school</p>
-                </div>
-              </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Upload Photos (4–5 recommended, max 5)</label>
-              <input type="file" accept="image/*" multiple onChange={handlePhotoChange} className="mt-2" />
-              {selectedPhotos?.length > 0 && (
-                <div className="mt-2 text-sm text-gray-600">{selectedPhotos.length} selected</div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Upload Video (max 20MB)</label>
-              <input type="file" accept="video/*" onChange={handleVideoChange} className="mt-2" />
-              {selectedVideo && (
-                <div className="mt-2 text-sm text-gray-600">{selectedVideo.name}</div>
-              )}
-            </div>
-          </div>
-          </div>
+  <div className="flex items-center gap-4 mb-8 p-6 bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl border border-violet-200/50 shadow-lg">
+    <div className="p-3 bg-gradient-to-r from-violet-500 to-purple-500 rounded-xl shadow-lg">
+      <Image className="w-6 h-6 text-white" />
+    </div>
+    <div>
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+        📸 Media
+      </h2>
+      <p className="text-gray-600 mt-1">Photos and videos showcasing your school</p>
+    </div>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    {/* Photos Upload */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700">
+        Upload Photos (4–5 recommended, max 5)
+      </label>
+
+      {/* Hidden Input */}
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        ref={photoInputRef}
+        onChange={handlePhotoChange}
+        className="hidden"
+      />
+
+      {/* Button */}
+      <button
+        type="button"
+        onClick={() => photoInputRef.current.click()}
+        className="mt-2 px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition"
+      >
+        Choose Photos
+      </button>
+
+      {selectedPhotos?.length > 0 && (
+        <div className="mt-2 text-sm text-gray-600">
+          {selectedPhotos.length} selected
+        </div>
+      )}
+    </div>
+
+    {/* Video Upload */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700">
+        Upload Video (max 20MB)
+      </label>
+
+      {/* Hidden Input */}
+      <input
+        type="file"
+        accept="video/*"
+        ref={videoInputRef}
+        onChange={handleVideoChange}
+        className="hidden"
+      />
+
+      {/* Button */}
+      <button
+        type="button"
+        onClick={() => videoInputRef.current.click()}
+        className="mt-2 px-4 py-2 bg-violet-600 text-white rounded-md hover:bg-violet-700 transition"
+      >
+        Choose Video
+      </button>
+
+      {selectedVideo && (
+        <div className="mt-2 text-sm text-gray-600">
+          {selectedVideo.name}
+        </div>
+      )}
+    </div>
+
+  </div>
+</div>
+
           </div>
 
           <div className="sticky bottom-0 -mx-6 px-6 py-6 bg-gradient-to-r from-white/95 to-white/90 backdrop-blur-xl border-t border-gray-200/50 shadow-2xl">
