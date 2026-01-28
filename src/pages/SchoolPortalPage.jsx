@@ -609,6 +609,38 @@ setApplications(allApplications);
     }
   };
 
+  const handleShowWrittenExamDetails = (app) => {
+    try {
+      console.log('📋 Written exam details from existing form data:', app);
+      console.log('🔍 All available fields in app:', Object.keys(app));
+      console.log('🔍 Written exam status:', app?.status);
+
+      // Set the application data for the modal using existing form data
+      const writtenExamNote = app?.note ||
+        app?.formDetails?.note ||
+        app?.applicationData?.note ||
+        app?._raw?.note ||
+        app?.applicationData?.formData?.note ||
+        'No written exam details available';
+
+      setSelectedWrittenExamApplication({
+        ...app,
+        writtenExamNote: writtenExamNote !== 'No written exam details available' ? writtenExamNote : 'No written exam details available'
+      });
+
+      setShowWrittenExamModal(true);
+    } catch (error) {
+      console.error('❌ Error showing written exam details:', {
+        applicationId: app?._id || app?.id,
+        studentId: app?.studId || app?.studentId,
+        schoolId: detectedSchoolId,
+        status: app?.status,
+        error: error.message,
+        fullError: error
+      });
+      toast.error('Failed to load written exam details');
+    }
+  };
 
   const handleOpenDetails = (app) => {
     const statusLower = (app.status || '').toString().toLowerCase();
@@ -616,6 +648,10 @@ setApplications(allApplications);
     // If status is Interview, show interview details instead of PDF
     if (statusLower === 'interview') {
       handleShowInterviewDetails(app);
+      return;
+    }
+    if (statusLower === 'writtenexam') {
+      handleShowWrittenExamDetails(app);
       return;
     }
 
@@ -890,6 +926,93 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
           onSchedule={handleWrittenExamScheduled}
         />
       )}
+      {/* Written Exam Details Modal */}
+{showWrittenExamModal && selectedWrittenExamApplication && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+
+      {/* Header */}
+      <div className="flex justify-between items-center p-6 border-b border-gray-200">
+        <div className="flex items-center">
+          <Calendar className="w-6 h-6 text-blue-600 mr-3" />
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Written Exam Details
+            </h2>
+            <p className="text-sm text-gray-600">
+              {selectedWrittenExamApplication?.studId?.name ||
+                selectedWrittenExamApplication?.studentName} -{" "}
+              {selectedWrittenExamApplication?.schoolId?.name ||
+                selectedWrittenExamApplication?.schoolName ||
+                "School"}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowWrittenExamModal(false)}
+          className="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        <div className="bg-blue-50 rounded-lg p-4 mb-4">
+          <h3 className="font-medium text-blue-900 mb-2">
+            Written Exam Information:
+          </h3>
+          <div className="text-sm text-blue-800 space-y-1">
+            <p><strong>Student:</strong> {selectedWrittenExamApplication?.studId?.name || "N/A"}</p>
+            <p><strong>School:</strong> {selectedWrittenExamApplication?.schoolId?.name || "N/A"}</p>
+            <p><strong>Class:</strong> {selectedWrittenExamApplication?.standard || "N/A"}</p>
+            <p><strong>Application Date:</strong> {selectedWrittenExamApplication?.date || "N/A"}</p>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-lg p-4">
+          <h3 className="font-medium text-gray-900 mb-2">
+            Written Exam Notes:
+          </h3>
+          <div className="text-sm text-gray-700 whitespace-pre-wrap">
+            {selectedWrittenExamApplication?.writtenExamNote ||
+              "No written exam details available"}
+          </div>
+
+          {/* Debug */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500 mb-2">Debug Information:</p>
+            <details className="text-xs text-gray-400">
+              <summary className="cursor-pointer hover:text-gray-600">
+                View Raw Data
+              </summary>
+              <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto max-h-32">
+                {JSON.stringify({
+                  writtenExamNote:
+                    selectedWrittenExamApplication?.writtenExamNote,
+                  fullData: selectedWrittenExamApplication,
+                  allKeys: Object.keys(
+                    selectedWrittenExamApplication || {}
+                  )
+                }, null, 2)}
+              </pre>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end space-x-3 p-6 border-t border-gray-200">
+        <button
+          onClick={() => setShowWrittenExamModal(false)}
+          className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Interview Details Modal */}
       {showInterviewDetailsModal && selectedInterviewApplication && (
@@ -968,6 +1091,8 @@ else if (typeof app?.formId === 'object' && app?.formId?._id) {
     </div>
   );
 };
+
+
 const ViewShortlistedApplications = ({ }) => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);

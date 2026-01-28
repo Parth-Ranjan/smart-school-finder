@@ -34,6 +34,10 @@ export const getStudentNotifications = async (studId) => {
           message = `Interview scheduled for ${schoolName}`;
           type = 'warning';
           break;
+          case 'writtenexam':
+          message = `Written exam scheduled for ${schoolName}`;
+          type = 'warning';
+          break;
         case 'accepted':
           message = `Congratulations! You've been accepted to ${schoolName}`;
           type = 'success';
